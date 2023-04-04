@@ -1,4 +1,4 @@
-package dev.uncomplex;
+package dev.uncomplex.server;
 
 import java.io.IOException;
 

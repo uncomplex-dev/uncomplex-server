@@ -14,7 +14,7 @@
         <maven.compiler.target>19</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jetty.version>11.0.5</jetty.version>
-        <exec.mainClass>com.hiapl.Main</exec.mainClass>
+        <exec.mainClass>dev.uncomplex.server.Main</exec.mainClass>
     </properties>
     
     <repositories>

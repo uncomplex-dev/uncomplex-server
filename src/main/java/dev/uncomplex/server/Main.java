@@ -1,5 +1,5 @@
 
-package dev.uncomplex;
+package dev.uncomplex.server;
 
 import org.eclipse.jetty.server.Server;
 
