@@ -13,6 +13,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Router extends AbstractHandler {
+
     public interface RouteHandler {
 
         void handle(HttpServletRequest request,
@@ -44,6 +45,8 @@ public class Router extends AbstractHandler {
             throws IOException, ServletException {
 
         var routeData = routes.getOrDefault(target, null);
+
+        addCorsHeaders(response);
         if (routeData == null) {
             handleNotFound(target, response);
             baseRequest.setHandled(true);
@@ -55,12 +58,12 @@ public class Router extends AbstractHandler {
             baseRequest.setHandled(true);
             return;
         }
-
-        addCorsHeaders(response);
-        response.setContentType("text/html;charset=utf-8");
-        response.setStatus(HttpServletResponse.SC_OK);
-        response.getWriter().println("<h1>Hello World</h1>");
-        baseRequest.setHandled(true);
+        try { 
+            routeData.handler.handle(request, response);
+            response.setStatus(200);
+        } finally {
+            baseRequest.setHandled(true);
+        }
     }
 
     protected void addCorsHeaders(HttpServletResponse response) {

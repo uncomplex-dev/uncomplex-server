@@ -33,9 +33,9 @@ public class Server {
     public void start() throws Exception {
         server.start();
         LOG.log(Level.INFO, String.format("Server started on port %d\n", port));
-
         server.join();
     }
+    
     
     public org.eclipse.jetty.server.Server getJettyServer() {
         return server;
