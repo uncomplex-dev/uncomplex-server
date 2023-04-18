@@ -1,23 +1,17 @@
 package dev.uncomplex.server;
 
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
 import java.io.IOException;
 
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.util.HashMap;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class Router extends AbstractHandler {
+public class Router implements HttpHandler {
 
     public interface RouteHandler {
 
-        void handle(HttpServletRequest request,
-                HttpServletResponse response);
+        void handle(HttpExchange exchange);
     }
 
     private static final Logger LOG = Logger.getLogger(Router.class.getName());
@@ -38,37 +32,34 @@ public class Router extends AbstractHandler {
     }
 
     @Override
-    public void handle(String target,
-            Request baseRequest,
-            HttpServletRequest request,
-            HttpServletResponse response)
-            throws IOException, ServletException {
-
+    public void handle(HttpExchange exchange) throws IOException {
+     
+        setHeaders(exchange);
+        
+        // find route or 404
+        var target = exchange.getRequestURI();
         var routeData = routes.getOrDefault(target, null);
-
-        addCorsHeaders(response);
         if (routeData == null) {
-            handleNotFound(target, response);
-            baseRequest.setHandled(true);
+            handleError(exchange, 404, "Not found");
             return;
         }
 
-        if (routeData.secure && !validateToken(request)) {
-            handleForbidden(response);
-            baseRequest.setHandled(true);
+        // check authorisation or 403
+        if (routeData.secure && !validateToken(exchange)) {
+            handleError(exchange, 403, "Forbidden");
             return;
         }
-        try { 
-            routeData.handler.handle(request, response);
-            response.setStatus(200);
-        } finally {
-            baseRequest.setHandled(true);
-        }
+        
+        // process request
+        routeData.handler.handle(exchange);
     }
 
-    protected void addCorsHeaders(HttpServletResponse response) {
-        response.addHeader("Access-Control-Allow-Origin", "*");
-        response.addHeader("Access-Control-Allow-Headers",
+
+    protected void setHeaders(HttpExchange exchange) {
+        var headers = exchange.getResponseHeaders();
+        headers.add("Content-Type", "application/json");
+        headers.add("Access-Control-Allow-Origin", "*");
+        headers.add("Access-Control-Allow-Headers",
                 "Origin,"
                 + "Content-Type,"
                 + "Accept,"
@@ -77,33 +68,18 @@ public class Router extends AbstractHandler {
                 + "X-Forwarded-For,"
                 + "X-Forwarded-Port,"
                 + "X-Forwarded-Proto");
-        response.addHeader("Access-Control-Allow-Credentials", "true");
-        response.addHeader("Access-Control-Allow-Methods", "GET, POST");
+        headers.add("Access-Control-Allow-Credentials", "true");
+        headers.add("Access-Control-Allow-Methods", "GET, POST");    }
+    
+    protected void handleError(HttpExchange exchange, int code, String message) throws IOException {
+        exchange.sendResponseHeaders(code, message.length());
+        exchange.getResponseBody().write(message.getBytes());
     }
 
-    protected boolean allowOrigin(String origin) {
+    protected boolean validateToken(HttpExchange exchange) {
         return true;
     }
-
-    protected void handleForbidden(HttpServletResponse response) throws IOException {
-        LOG.log(Level.WARNING, "Invalid Token");
-        response.setContentType("text/html;charset=utf-8");
-        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-        response.getWriter().println("Forbidden");
-    }
-
-    protected void handleNotFound(String target, HttpServletResponse response) throws IOException {
-        LOG.log(Level.WARNING,
-                String.format("No registered handler for route '%s'", target));
-        response.setContentType("text/plain;charset=utf-8");
-        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-        response.getWriter().println("Not Found");
-    }
-
-    protected boolean validateToken(HttpServletRequest r) {
-        return true;
-    }
-
+ 
     private static record RouteData(RouteHandler handler, boolean secure) {
 
     }
