@@ -33,9 +33,14 @@ public class Router implements HttpHandler {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-     
+        // handle cors preflight request
+        if (exchange.getRequestMethod().equals("OPTIONS")) {
+            handlePrefightRequest(exchange);
+            return;
+        }
+
         setHeaders(exchange);
-        
+
         // find route or 404
         var target = exchange.getRequestURI();
         var routeData = routes.getOrDefault(target, null);
@@ -49,7 +54,7 @@ public class Router implements HttpHandler {
             handleError(exchange, 403, "Forbidden");
             return;
         }
-        
+
         // process request
         routeData.handler.handle(exchange);
     }
@@ -57,20 +62,9 @@ public class Router implements HttpHandler {
 
     protected void setHeaders(HttpExchange exchange) {
         var headers = exchange.getResponseHeaders();
-        headers.add("Content-Type", "application/json");
-        headers.add("Access-Control-Allow-Origin", "*");
-        headers.add("Access-Control-Allow-Headers",
-                "Origin,"
-                + "Content-Type,"
-                + "Accept,"
-                + "Authorization,"
-                + "Date,"
-                + "X-Forwarded-For,"
-                + "X-Forwarded-Port,"
-                + "X-Forwarded-Proto");
-        headers.add("Access-Control-Allow-Credentials", "true");
-        headers.add("Access-Control-Allow-Methods", "GET, POST");    }
-    
+
+    }
+
     protected void handleError(HttpExchange exchange, int code, String message) throws IOException {
         exchange.sendResponseHeaders(code, message.length());
         exchange.getResponseBody().write(message.getBytes());
@@ -79,7 +73,32 @@ public class Router implements HttpHandler {
     protected boolean validateToken(HttpExchange exchange) {
         return true;
     }
- 
+
+    /*
+    CORS preflight requests will be sent by browsers because of the required
+    Authorization header on secure requests
+    */
+    protected void handlePrefightRequest(HttpExchange exchange) throws IOException {
+        var headers = exchange.getResponseHeaders();
+        headers.add("Access-Control-Allow-Origin", exchange.getRequestHeaders().getFirst("origin"));
+        headers.add("Access-Control-Allow-Credentials", "true");
+        headers.add("Access-Control-Allow-Methods", "OPTIONS, GET, POST");
+
+        // see: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Headers
+        headers.add("Access-Control-Allow-Headers",
+                "Origin,"
+                + "Accept,"
+                + "Accept-Language,"
+                + "Content-Language,"
+                + "Content-Type,"
+                + "Authorization,"
+                + "X-Forwarded-Host,"
+                + "X-Forwarded-For,"
+                + "X-Forwarded-Port,"
+                + "X-Forwarded-Proto");
+        exchange.sendResponseHeaders(200, 0);
+    }
+
     private static record RouteData(RouteHandler handler, boolean secure) {
 
     }
