@@ -37,21 +37,7 @@
             <artifactId>uncomplex-jwt</artifactId>
             <version>1.0.0</version>
         </dependency>
-      
-        <!-- Jakarta Servlets API -->
-        <dependency>
-            <groupId>jakarta.servlet</groupId>
-            <artifactId>jakarta.servlet-api</artifactId>
-            <version>5.0.0</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <!-- Jetty -->
-<!--        <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-server</artifactId>
-            <version>${jetty.version}</version>
-        </dependency>-->
+     
         
         <!-- testing -->
         <dependency>
