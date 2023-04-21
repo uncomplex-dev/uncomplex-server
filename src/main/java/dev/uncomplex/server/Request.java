@@ -4,6 +4,7 @@ import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpPrincipal;
+import dev.uncomplex.utf8.Utf8Reader;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -62,6 +63,11 @@ public class Request {
 
     public void setAttribute(String name, Object value) {
         exchange.setAttribute(name, value);
+    }
+    
+    @Override
+    public String toString() {
+        return Utf8Reader.toString(getBody());
     }
 
 }

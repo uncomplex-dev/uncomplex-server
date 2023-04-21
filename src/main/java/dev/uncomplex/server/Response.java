@@ -60,4 +60,7 @@ public class Response {
         getHeaders().set("Content-Type", type);
     }
 
+    public void setCacheControl(String value) {
+        getHeaders().set("Cache-Control", value);
+    }
 }
