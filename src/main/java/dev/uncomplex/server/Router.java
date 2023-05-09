@@ -93,12 +93,12 @@ public class Router implements HttpHandler {
                 + HttpConst.ACCEPT_LANGUAGE + ","
                 + HttpConst.CONTENT_LANGUAGE + ","
                 + HttpConst.CONTENT_TYPE + ","
-                + HttpConst.AUTHORISATION + ","
+                + HttpConst.AUTHORIZATION + ","
                 + HttpConst.X_FORWARDED_HOST + ","
                 + HttpConst.X_FORWARDED_FOR + ","
                 + HttpConst.X_FORWARDED_PORT + ","
                 + HttpConst.X_FORWARDED_PROTO);
-        exchange.sendResponseHeaders(HTTP_OK, 0);
+        exchange.sendResponseHeaders(HttpConst.STATUS_OK, 0);
     }
 
     private static record RouteData(RouteHandler handler, boolean secure) {
