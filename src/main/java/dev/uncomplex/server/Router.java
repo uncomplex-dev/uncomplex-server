@@ -3,6 +3,7 @@ package dev.uncomplex.server;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import java.io.IOException;
+import java.io.OutputStream;
 import static java.net.HttpURLConnection.*;
 
 import java.util.HashMap;
@@ -32,29 +33,37 @@ public class Router implements HttpHandler {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-        var request = new Request(exchange);
-        var response = new Response(exchange);
-        // handle cors preflight request
-        if (exchange.getRequestMethod().equals(HttpConst.METHOD_OPTIONS)) {
-            handlePrefightRequest(exchange);
-            return;
-        }
+        try {
+            var request = new Request(exchange);
+            var response = new Response(exchange);
+            // handle cors preflight request
+            if (request.getRequestMethod().equals(HttpConst.METHOD_OPTIONS)) {
+                handlePrefightRequest(exchange);
+                return;
+            }
 
-        // find route or 404
-        var target = exchange.getRequestURI().toString();
-        var routeData = routes.getOrDefault(target, null);
-        if (routeData == null) {
-            response.send(HTTP_NOT_FOUND, "Not found");
-            return;
-        }
+            // find route or 404
+            var routeData = getRoute(request);
+            if (routeData == null) {
+                response.send(HTTP_NOT_FOUND, "Not found");
+                return;
+            }
 
-        // check authorisation or 401
-        if (routeData.secure && !isAuthorised(request)) {
-            response.send(HTTP_UNAUTHORIZED, "Forbidden");
-            return;
-        }
+            // check authorisation or 401
+            if (routeData.secure && !isAuthorised(request)) {
+                response.send(HTTP_UNAUTHORIZED, "Forbidden");
+                return;
+            }
 
-        routeData.handler.handle(request, response);
+            routeData.handler.handle(request, response);
+        } finally {
+            // consume any residual request data, flush response data and close
+            // exchange
+            try (exchange) {
+                exchange.getRequestBody().transferTo(OutputStream.nullOutputStream());
+                exchange.getResponseBody().flush();
+            }
+        }
     }
 
     /**
@@ -70,6 +79,16 @@ public class Router implements HttpHandler {
     }
 
     /**
+     * Get RouteData from request URI
+     * @param request
+     * @return 
+     */
+    protected RouteData getRoute(Request request) {
+        var target = request.getURI().toString();
+        return routes.getOrDefault(target, null);
+    }
+
+    /**
      * CORS preflight requests will be sent by browsers because of the required
      * Authorization header on secure requests
      *
@@ -82,7 +101,7 @@ public class Router implements HttpHandler {
         var headers = exchange.getResponseHeaders();
         headers.add(HttpConst.ACCESS_CONTROL_ALLOW_ORIGIN, exchange.getRequestHeaders().getFirst(HttpConst.ORIGIN));
         headers.add(HttpConst.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
-        headers.add(HttpConst.ACCESS_CONTROL_ALLOW_METHODS, 
+        headers.add(HttpConst.ACCESS_CONTROL_ALLOW_METHODS,
                 HttpConst.METHOD_GET + ","
                 + HttpConst.METHOD_OPTIONS + ","
                 + HttpConst.METHOD_POST + ",");

@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 /**
- * Response
+ * BufferedResponse
  *
  * The HTTP protocol requires that the status code and headers are sent prior to
  * the body of a message. If there is any possibility that an error could occur
@@ -16,10 +16,10 @@ import java.io.OutputStream;
  * the body was constructed correctly before we can send the appropriate status
  * code.
  *
- * Response allows the construction of the HTTP body BEFORE sending the status
- * and headers by caching the body in an in-memory byte array. When send() is
- * called the status and header are writing to the underlying output stream
- * followed by the cached body.
+ * BufferedResponse allows the construction of the HTTP body BEFORE sending the
+ * status and headers by caching the body in an in-memory byte array. When
+ * send() is called the status and header are writing to the underlying output
+ * stream followed by the cached body.
  *
  * @author jthorpe
  */
@@ -36,20 +36,28 @@ public class Response {
         return exchange.getResponseHeaders();
     }
 
+    /**
+     * Get output stream for the response body
+     *
+     * If send() has been called we can return the underlying stream directly
+     * otherwise we return buffered stream
+     *
+     * @return
+     */
     public OutputStream getBody() {
         return stream;
     }
 
     /**
      * Send the response, with the response body being the bytes written to the
-     * response stream.
+     * buffered stream (if any)
      *
      * @param status
      * @throws IOException
      */
     public void send(int status) throws IOException {
-        try (exchange) {
-            exchange.sendResponseHeaders(status, stream.size());
+        exchange.sendResponseHeaders(status, stream.size());
+        if (stream.size() > 0) {
             stream.writeTo(exchange.getResponseBody());
         }
     }
@@ -66,11 +74,6 @@ public class Response {
         stream.reset();
         new Utf8Writer(stream).write(message);
         send(status);
-    }
-
-    public Response setHeader(String key, String value) {
-        getHeaders().set(key, value);
-        return this;
     }
 
 }
