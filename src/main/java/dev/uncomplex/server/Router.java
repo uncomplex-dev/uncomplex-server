@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import static java.net.HttpURLConnection.*;
 
 import java.util.HashMap;
+import java.util.TreeMap;
 
 public class Router implements HttpHandler {
 
@@ -16,6 +17,7 @@ public class Router implements HttpHandler {
     }
 
     private static final HashMap<String, RouteData> routes = new HashMap<>();
+    private static RouteNode root = null;
 
     public static void registerPublicRoute(String route, RouteHandler handler) {
         if (!route.startsWith("/")) {
@@ -118,6 +120,34 @@ public class Router implements HttpHandler {
                 + HttpConst.X_FORWARDED_PORT + ","
                 + HttpConst.X_FORWARDED_PROTO);
         exchange.sendResponseHeaders(HttpConst.STATUS_OK, 0);
+    }
+    
+    private void buildRoute(String route, RouteData data) {
+        RouteNode n  = root;
+        for ( int i = 0; i < route.length(); ++i) {
+            if (n.next == null) {
+                n.next = new TreeMap<>();
+            }
+            char c = route.charAt(i);
+            RouteNode m = n.next.computeIfAbsent(c, d -> new RouteNode());
+            m.c = c;
+            n = m;
+        }
+        n.data = data;
+    }
+    
+    private RouteData getRoute(String route) {
+        RouteNode best = null;
+        RouteNode n = root;
+        for ( int i = 0; i < route.length(); ++i) {
+            if (c == )
+        }
+    }
+    
+    private static class RouteNode {
+        public char c;
+        public RouteData data;
+        public TreeMap<Character, RouteNode> next;
     }
 
     private static record RouteData(RouteHandler handler, boolean secure) {

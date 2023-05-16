@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 /**
- * BufferedResponse
+ * Response
  *
  * The HTTP protocol requires that the status code and headers are sent prior to
  * the body of a message. If there is any possibility that an error could occur
@@ -16,7 +16,7 @@ import java.io.OutputStream;
  * the body was constructed correctly before we can send the appropriate status
  * code.
  *
- * BufferedResponse allows the construction of the HTTP body BEFORE sending the
+ * Response allows the construction of the HTTP body BEFORE sending the
  * status and headers by caching the body in an in-memory byte array. When
  * send() is called the status and header are writing to the underlying output
  * stream followed by the cached body.
