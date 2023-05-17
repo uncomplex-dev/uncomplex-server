@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import static java.net.HttpURLConnection.*;
 
-import java.util.HashMap;
 import java.util.TreeMap;
 
 public class Router implements HttpHandler {
@@ -16,21 +15,20 @@ public class Router implements HttpHandler {
         void handle(Request request, Response response) throws IOException;
     }
 
-    private static final HashMap<String, RouteData> routes = new HashMap<>();
-    private static RouteNode root = null;
+    private static RouteNode routes = new RouteNode();
 
     public static void registerPublicRoute(String route, RouteHandler handler) {
         if (!route.startsWith("/")) {
             route = "/" + route;
         }
-        routes.put(route, new RouteData(handler, false));
+        buildRoute(route, new RouteData(handler, false, route));
     }
 
     public static void registerSecureRoute(String route, RouteHandler handler) {
         if (!route.startsWith("/")) {
             route = "/" + route;
         }
-        routes.put(route, new RouteData(handler, true));
+        buildRoute(route, new RouteData(handler, true, route));
     }
 
     @Override
@@ -81,13 +79,14 @@ public class Router implements HttpHandler {
     }
 
     /**
-     * Get RouteData from request URI
+     * Get RouteData from request.
+     *
      * @param request
-     * @return 
+     * @return
      */
     protected RouteData getRoute(Request request) {
-        var target = request.getURI().toString();
-        return routes.getOrDefault(target, null);
+        var uri = request.getURI().toString();
+        return findRoute(uri);
     }
 
     /**
@@ -121,36 +120,60 @@ public class Router implements HttpHandler {
                 + HttpConst.X_FORWARDED_PROTO);
         exchange.sendResponseHeaders(HttpConst.STATUS_OK, 0);
     }
-    
-    private void buildRoute(String route, RouteData data) {
-        RouteNode n  = root;
-        for ( int i = 0; i < route.length(); ++i) {
+
+    /**
+     * Build route tree
+     * @param route
+     * @param data 
+     */
+    protected static void buildRoute(String route, RouteData data) {
+        RouteNode n = routes;
+        for (int i = 0; i < route.length(); ++i) {
             if (n.next == null) {
                 n.next = new TreeMap<>();
             }
-            char c = route.charAt(i);
+            var c = route.charAt(i);
             RouteNode m = n.next.computeIfAbsent(c, d -> new RouteNode());
             m.c = c;
             n = m;
         }
         n.data = data;
     }
-    
-    private RouteData getRoute(String route) {
-        RouteNode best = null;
-        RouteNode n = root;
-        for ( int i = 0; i < route.length(); ++i) {
-            if (c == )
+
+    /**
+     * Search route tree for a match to the given URI path
+     * @param uri
+     * @return RouteData or null if not match found
+     */
+    protected static RouteData findRoute(String uri) {
+        RouteData wildcardData = null;
+        RouteNode n = routes;
+        int i = 0;
+        while (i < uri.length() && n != null) {
+            // if wildcard match then record data in case we don't find an exact
+            // match later and need to backtrack
+            var m = n.next.get('*');
+            if (m != null) {
+                wildcardData = m.data;
+            }
+            // progress to next exact match node
+            var c = uri.charAt(i++);
+            n = n.next.get(c);
         }
+        // return exact match data or wildcard data (which may be null)
+        return (n != null && n.data != null)
+                ? n.data
+                : wildcardData;
     }
-    
+
     private static class RouteNode {
+
         public char c;
         public RouteData data;
         public TreeMap<Character, RouteNode> next;
     }
 
-    private static record RouteData(RouteHandler handler, boolean secure) {
+    protected static record RouteData(RouteHandler handler, boolean secure, String route) {
 
     }
 }

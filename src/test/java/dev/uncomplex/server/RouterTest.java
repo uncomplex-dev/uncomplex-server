@@ -8,9 +8,10 @@ import org.testng.annotations.*;
  *
  * @author jthorpe
  */
-public class ServerNGTest {
+public class RouterTest {
     
-    public ServerNGTest() {
+    
+    public RouterTest() {
     }
 
     @org.testng.annotations.BeforeClass
@@ -30,10 +31,18 @@ public class ServerNGTest {
     }
 
     /**
-     * Test of getPort method, of class Server.
+     * Test of build and find routes
      */
     @Test
-    public void testStart() {
+    public void testRoutes() {
+        Router.registerPublicRoute("/*", (r, s) -> {});
+        Router.registerPublicRoute("/abc", (r, s) -> {});
+        Router.registerPublicRoute("/abc*", (r, s) -> {});
+        Router.registerPublicRoute("/abcd", (r, s) -> {});
+        Router.registerPublicRoute("/abcd*", (r, s) -> {});
+        Router.registerPublicRoute("/abcde", (r, s) -> {});
+        assertEquals(Router.findRoute("/"), "/*");
+        
     }
 
 
