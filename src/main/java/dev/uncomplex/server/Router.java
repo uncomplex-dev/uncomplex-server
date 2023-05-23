@@ -18,14 +18,14 @@ public class Router implements HttpHandler {
     private static RouteNode routes = new RouteNode();
 
     public static void registerPublicRoute(String route, RouteHandler handler) {
-        if (!route.startsWith("/")) {
+        if (!route.equals("*") && !route.startsWith("/")) {
             route = "/" + route;
         }
         buildRoute(route, new RouteData(handler, false, route));
     }
 
     public static void registerSecureRoute(String route, RouteHandler handler) {
-        if (!route.startsWith("/")) {
+        if (!route.equals("*") && !route.startsWith("/")) {
             route = "/" + route;
         }
         buildRoute(route, new RouteData(handler, true, route));
@@ -50,8 +50,8 @@ public class Router implements HttpHandler {
             }
 
             // check authorisation or 401
-            if (routeData.secure && !isAuthorised(request)) {
-                response.send(HTTP_UNAUTHORIZED, "Forbidden");
+            if (routeData.secure && !isAuthorized(request)) {
+                response.send(HTTP_UNAUTHORIZED, "Unauthorized");
                 return;
             }
 
@@ -71,10 +71,10 @@ public class Router implements HttpHandler {
      * a JWT.
      *
      * @param request
-     * @return true if the client is authorised for this request
+     * @return true if the client is authorized for this request
      *
      */
-    protected boolean isAuthorised(Request request) {
+    protected boolean isAuthorized(Request request) {
         return false;
     }
 
@@ -152,13 +152,13 @@ public class Router implements HttpHandler {
         while (i < uri.length() && n != null) {
             // if wildcard match then record data in case we don't find an exact
             // match later and need to backtrack
-            var m = n.next.get('*');
+            var m = (n.next != null) ? n.next.get('*') : null;
             if (m != null) {
                 wildcardData = m.data;
             }
             // progress to next exact match node
             var c = uri.charAt(i++);
-            n = n.next.get(c);
+            n = (n.next != null) ? n.next.get(c) : null;
         }
         // return exact match data or wildcard data (which may be null)
         return (n != null && n.data != null)

@@ -39,10 +39,15 @@ public class RouterTest {
         Router.registerPublicRoute("/abc", (r, s) -> {});
         Router.registerPublicRoute("/abc*", (r, s) -> {});
         Router.registerPublicRoute("/abcd", (r, s) -> {});
-        Router.registerPublicRoute("/abcd*", (r, s) -> {});
-        Router.registerPublicRoute("/abcde", (r, s) -> {});
-        assertEquals(Router.findRoute("/"), "/*");
-        
+        assertEquals(Router.findRoute("/"), null);
+        Router.registerPublicRoute("*", (r, s) -> {});
+        assertEquals(Router.findRoute("/").route(), "*");
+        assertEquals(Router.findRoute("/xyz").route(), "/*");
+        assertEquals( Router.findRoute("/abc").route(), "/abc");
+        assertEquals( Router.findRoute("/abd").route(), "/*");
+        assertEquals( Router.findRoute("/abcd").route(), "/abcd");
+        assertEquals( Router.findRoute("/abce").route(), "/abc*");
+        assertEquals( Router.findRoute("/abcde").route(), "/abc*");
     }
 
 
