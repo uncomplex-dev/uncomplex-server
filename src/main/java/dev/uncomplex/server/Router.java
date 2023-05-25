@@ -133,9 +133,8 @@ public class Router implements HttpHandler {
                 n.next = new TreeMap<>();
             }
             var c = route.charAt(i);
-            RouteNode m = n.next.computeIfAbsent(c, d -> new RouteNode());
-            m.c = c;
-            n = m;
+            n = n.next.computeIfAbsent(c, d -> new RouteNode());
+            n.c = c;
         }
         n.data = data;
     }
