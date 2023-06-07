@@ -31,7 +31,19 @@ public class Response {
     public Response(HttpExchange exchange) {
         this.exchange = exchange;
     }
+    
+    
+    /**
+     * Clear buffer
+     */
+    public void clear() {
+        stream.reset();
+    }
 
+    /**
+     * Get response headers
+     * @return 
+     */
     public Headers getHeaders() {
         return exchange.getResponseHeaders();
     }
