@@ -10,11 +10,6 @@ import java.util.TreeMap;
 
 public class Router implements HttpHandler {
 
-    public interface RouteHandler {
-
-        void handle(Request request, Response response) throws IOException;
-    }
-
     private static RouteNode routes = new RouteNode();
 
     public static void registerPublicRoute(String route, RouteHandler handler) {
