@@ -9,12 +9,10 @@
 
 
     <properties>
-        <!-- Java 19 -->
-        <maven.compiler.source>19</maven.compiler.source>
-        <maven.compiler.target>19</maven.compiler.target>
+        <maven.compiler.source>20</maven.compiler.source>
+        <maven.compiler.target>20</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <jetty.version>11.0.5</jetty.version>
-        <exec.mainClass>com.hiapl.Main</exec.mainClass>
+        <exec.mainClass>dev.uncomplex.server.Main</exec.mainClass>
     </properties>
     
     <repositories>
@@ -26,31 +24,32 @@
     </repositories>
 
     <dependencies>
+        
         <dependency>
             <groupId>dev.uncomplex</groupId>
             <artifactId>uncomplex-json</artifactId>
             <version>1.0.1</version>
         </dependency>
       
-      <dependency>
+        <dependency>
             <groupId>dev.uncomplex</groupId>
             <artifactId>uncomplex-jwt</artifactId>
             <version>1.0.0</version>
         </dependency>
-      
-        <!-- Jakarta Servlets API -->
-        <dependency>
-            <groupId>jakarta.servlet</groupId>
-            <artifactId>jakarta.servlet-api</artifactId>
-            <version>5.0.0</version>
-            <scope>provided</scope>
-        </dependency>
 
-        <!-- Jetty -->
         <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-server</artifactId>
-            <version>${jetty.version}</version>
+            <groupId>dev.uncomplex</groupId>
+            <artifactId>uncomplex-properties</artifactId>
+            <version>1.0.2</version>
+        </dependency>
+     
+        
+        <!-- testing -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.7.1</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -59,7 +58,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.10.1</version>
+                <version>3.11.0</version>
+                <configuration>
+                    <compilerArgs>
+                        <arg>--enable-preview</arg>
+                    </compilerArgs>
+                </configuration>
             </plugin>
 
 
