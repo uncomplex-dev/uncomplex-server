@@ -9,11 +9,9 @@
 
 
     <properties>
-        <!-- Java 19 -->
-        <maven.compiler.source>19</maven.compiler.source>
-        <maven.compiler.target>19</maven.compiler.target>
+        <maven.compiler.source>20</maven.compiler.source>
+        <maven.compiler.target>20</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <jetty.version>11.0.5</jetty.version>
         <exec.mainClass>dev.uncomplex.server.Main</exec.mainClass>
     </properties>
     
@@ -26,6 +24,7 @@
     </repositories>
 
     <dependencies>
+        
         <dependency>
             <groupId>dev.uncomplex</groupId>
             <artifactId>uncomplex-json</artifactId>
@@ -37,13 +36,19 @@
             <artifactId>uncomplex-jwt</artifactId>
             <version>1.0.0</version>
         </dependency>
+
+        <dependency>
+            <groupId>dev.uncomplex</groupId>
+            <artifactId>uncomplex-properties</artifactId>
+            <version>1.0.2</version>
+        </dependency>
      
         
         <!-- testing -->
         <dependency>
-            <groupId>org.testng</groupId>
-            <artifactId>testng</artifactId>
-            <version>6.8.1</version>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.7.1</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
