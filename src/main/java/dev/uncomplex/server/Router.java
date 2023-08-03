@@ -6,26 +6,42 @@ import java.io.IOException;
 import java.io.OutputStream;
 import static java.net.HttpURLConnection.*;
 
-import java.util.TreeMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 public class Router implements HttpHandler {
+ 
+    static class Route {
+        public RouteHandler handler;
+        public boolean secure;        
+        public char c;
+        public ConcurrentSkipListMap<Character, Route> next;   
+    }
 
-    private static RouteNode routes = new RouteNode();
+    private final Route routes = new Route();
 
-    public static void registerPublicRoute(String route, RouteHandler handler) {
+    /**
+     * Add a public route that does not require authentication
+     * @param route
+     * @param handler 
+     */
+    public void addPublicRoute(String route, RouteHandler handler) {
         if (!route.equals("*") && !route.startsWith("/")) {
             route = "/" + route;
         }
-        buildRoute(route, new RouteData(handler, false, route));
+        buildRoute(route, handler, false);
     }
 
-    public static void registerSecureRoute(String route, RouteHandler handler) {
+    /**
+     * Add a security route that requires authentication with a JWT token;
+     * @param route
+     * @param handler 
+     */
+    public void addSecureRoute(String route, RouteHandler handler) {
         if (!route.equals("*") && !route.startsWith("/")) {
             route = "/" + route;
         }
-        buildRoute(route, new RouteData(handler, true, route));
+        buildRoute(route, handler, true);
     }
-
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         try {
@@ -38,19 +54,19 @@ public class Router implements HttpHandler {
             }
 
             // find route or 404
-            var routeData = getRoute(request);
-            if (routeData == null) {
+            var route = getRoute(request);
+            if (route == null) {
                 response.send(HTTP_NOT_FOUND, "Not found");
                 return;
             }
 
             // check authorisation or 401
-            if (routeData.secure && !isAuthorized(request)) {
+            if (route.secure && !isAuthorized(request)) {
                 response.send(HTTP_UNAUTHORIZED, "Unauthorized");
                 return;
             }
 
-            routeData.handler.handle(request, response);
+            route.handler.handle(request, response);
         } finally {
             // consume any residual request data, flush response data and close
             // exchange
@@ -62,27 +78,36 @@ public class Router implements HttpHandler {
     }
 
     /**
-     * Validate the Authorization header It is assumed that the header contains
-     * a JWT.
-     *
-     * @param request
-     * @return true if the client is authorized for this request
-     *
+     * Remove route
+     * @param route
      */
-    protected boolean isAuthorized(Request request) {
-        return false;
+    public void removeRoute(String route) {
+        var node = findRoute(route);
+        if (node != null) {
+            node.handler = null;  // <== findRoute() now returns null
+            node.secure = false;
+        }
     }
-
-    /**
-     * Get RouteData from request.
-     *
-     * @param request
-     * @return
-     */
-    protected RouteData getRoute(Request request) {
-        var uri = request.getURI().toString();
-        return findRoute(uri);
+    Route findRoute(String uri) {
+        Route wildcardNode = null;
+        Route n = routes;
+        int i = 0;
+        while (i < uri.length() && n != null) {
+            // if wildcard match then record data in case we don't find an exact
+            // match later and need to backtrack
+            var m = (n.next != null) ? n.next.get('*') : null;
+            if (m != null) {
+                wildcardNode = m;
+            }
+            // progress to next exact match node
+            var c = uri.charAt(i++);
+            n = (n.next != null) ? n.next.get(c) : null;
+        }
+        // return exact match node or wildcard node (which may be null)
+        // if handler == null we have a partial uri match only
+        return (n != null && n.handler != null) ? n : wildcardNode;
     }
+ 
 
     /**
      * CORS preflight requests will be sent by browsers because of the required
@@ -115,59 +140,45 @@ public class Router implements HttpHandler {
                 + HttpConst.X_FORWARDED_PROTO);
         exchange.sendResponseHeaders(HttpConst.STATUS_OK, 0);
     }
-
+    /**
+     * Validate the Authorization header It is assumed that the header contains
+     * a JWT.
+     * 
+     * @param request
+     * @return true if the client is authorized for this request
+     *
+     */
+    protected boolean isAuthorized(Request request) {
+        return false;
+    }
     /**
      * Build route tree
-     * @param route
-     * @param data 
+     * @param path
+     * @param handler
+     * @param secure
      */
-    protected static void buildRoute(String route, RouteData data) {
-        RouteNode n = routes;
-        for (int i = 0; i < route.length(); ++i) {
-            if (n.next == null) {
-                n.next = new TreeMap<>();
+    private void buildRoute(String path, RouteHandler handler, boolean secure) {
+        Route route = routes;
+        for (int i = 0; i < path.length(); ++i) {
+            if (route.next == null) {
+                route.next = new ConcurrentSkipListMap<>();
             }
-            var c = route.charAt(i);
-            n = n.next.computeIfAbsent(c, d -> new RouteNode());
-            n.c = c;
+            var c = path.charAt(i);
+            route = route.next.computeIfAbsent(c, d -> new Route());
+            route.c = c;
         }
-        n.data = data;
+        route.handler = handler;
+        route.secure = secure;
     }
-
     /**
-     * Search route tree for a match to the given URI path
-     * @param uri
-     * @return RouteData or null if not match found
+     * Get RouteData from request.
+     *
+     * @param request
+     * @return
      */
-    protected static RouteData findRoute(String uri) {
-        RouteData wildcardData = null;
-        RouteNode n = routes;
-        int i = 0;
-        while (i < uri.length() && n != null) {
-            // if wildcard match then record data in case we don't find an exact
-            // match later and need to backtrack
-            var m = (n.next != null) ? n.next.get('*') : null;
-            if (m != null) {
-                wildcardData = m.data;
-            }
-            // progress to next exact match node
-            var c = uri.charAt(i++);
-            n = (n.next != null) ? n.next.get(c) : null;
-        }
-        // return exact match data or wildcard data (which may be null)
-        return (n != null && n.data != null)
-                ? n.data
-                : wildcardData;
+    private Route getRoute(Request request) {
+        var uri = request.getURI().toString();
+        return findRoute(uri);       
     }
 
-    private static class RouteNode {
-
-        public char c;
-        public RouteData data;
-        public TreeMap<Character, RouteNode> next;
-    }
-
-    protected static record RouteData(RouteHandler handler, boolean secure, String route) {
-
-    }
 }

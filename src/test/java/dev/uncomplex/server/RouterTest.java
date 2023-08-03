@@ -1,7 +1,7 @@
 
 package dev.uncomplex.server;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
 
@@ -11,6 +11,11 @@ import org.junit.jupiter.api.Test;
  */
 public class RouterTest {
     
+    RouteHandler ASTER = (r, s) -> {};
+    RouteHandler SLASH_ASTER = (r, s) -> {};
+    RouteHandler SLASH_ABC = (r, s) -> {};
+    RouteHandler SLASH_ABC_ASTER = (r, s) -> {};
+    RouteHandler SLASH_ABCD = (r, s) -> {};
     
     public RouterTest() {
     }
@@ -21,19 +26,20 @@ public class RouterTest {
      */
     @Test
     public void testRoutes() {
-        Router.registerPublicRoute("/*", (r, s) -> {});
-        Router.registerPublicRoute("/abc", (r, s) -> {});
-        Router.registerPublicRoute("/abc*", (r, s) -> {});
-        Router.registerPublicRoute("/abcd", (r, s) -> {});
-        assertEquals(Router.findRoute("/"), null);
-        Router.registerPublicRoute("*", (r, s) -> {});
-        assertEquals(Router.findRoute("/").route(), "*");
-        assertEquals(Router.findRoute("/xyz").route(), "/*");
-        assertEquals( Router.findRoute("/abc").route(), "/abc");
-        assertEquals( Router.findRoute("/abd").route(), "/*");
-        assertEquals( Router.findRoute("/abcd").route(), "/abcd");
-        assertEquals( Router.findRoute("/abce").route(), "/abc*");
-        assertEquals( Router.findRoute("/abcde").route(), "/abc*");
+        Router router = new Router();
+        router.addPublicRoute("/*", SLASH_ASTER);
+        router.addPublicRoute("/abc", SLASH_ABC);
+        router.addPublicRoute("/abc*", SLASH_ABC_ASTER);
+        router.addPublicRoute("/abcd", SLASH_ABCD);
+        assertNull(router.findRoute("/"));
+        router.addPublicRoute("*", ASTER);
+        assertEquals(router.findRoute("/").handler, ASTER);  
+        assertEquals(router.findRoute("/xyz").handler, SLASH_ASTER); // "/*");
+        assertEquals( router.findRoute("/abc").handler, SLASH_ABC);
+        assertEquals( router.findRoute("/abd").handler, SLASH_ASTER);
+        assertEquals( router.findRoute("/abcd").handler, SLASH_ABCD);
+        assertEquals( router.findRoute("/abce").handler, SLASH_ABC_ASTER);
+        assertEquals( router.findRoute("/abcde").handler, SLASH_ABC_ASTER);
     }
 
 
