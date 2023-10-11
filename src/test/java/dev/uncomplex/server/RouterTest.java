@@ -11,11 +11,11 @@ import org.junit.jupiter.api.Test;
  */
 public class RouterTest {
     
-    RouteHandler ASTER = (r, s) -> {};
-    RouteHandler SLASH_ASTER = (r, s) -> {};
-    RouteHandler SLASH_ABC = (r, s) -> {};
-    RouteHandler SLASH_ABC_ASTER = (r, s) -> {};
-    RouteHandler SLASH_ABCD = (r, s) -> {};
+    RouteHandler ASTER = (r, s) -> { return true; };
+    RouteHandler SLASH_ASTER = (r, s) -> { return true; };
+    RouteHandler SLASH_ABC = (r, s) -> { return true; };
+    RouteHandler SLASH_ABC_ASTER = (r, s) -> { return true; };
+    RouteHandler SLASH_ABCD = (r, s) -> { return true; };
     
     public RouterTest() {
     }

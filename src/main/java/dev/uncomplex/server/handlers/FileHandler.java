@@ -25,41 +25,25 @@ import dev.uncomplex.server.RouteHandler;
  * @author jthorpe
  */
 public class FileHandler implements RouteHandler {
+
     private final Map<String, String> pathMap;
-    private final String resourcePath;
+    private final String filePath;
 
-    public FileHandler() {
+    public FileHandler(String filePath) {
         pathMap = new HashMap<>();
-        resourcePath = System.getProperty("user.dir");
+        this.filePath = filePath;
     }
 
-    public FileHandler(String resourcePath) {
-        pathMap = new HashMap<>();
-        this.resourcePath = resourcePath;
-    }
-
-    
     /**
-     * Construct a FileHandler with a path map. The path map allows the
-     * remapping of path to a new path. For example '/' -> '/index.html'
+     * Construct a FileHandler with a path map.The path map allows the remapping
+     * of path to a new path. For example '/' -> '/index.html'
      *
+     * @param filePath
      * @param pathMap
      */
-    public FileHandler(Map<String, String> pathMap) {
+    public FileHandler(String filePath, Map<String, String> pathMap) {
         this.pathMap = pathMap;
-        resourcePath = System.getProperty("user.dir");
-    }
-    
-        /**
-     * Construct a FileHandler with a path map.The path map allows the
- remapping of path to a new path. For example '/' -> '/index.html'
-     *
-     * @param resourcePath
-     * @param pathMap
-     */
-    public FileHandler(String resourcePath, Map<String, String> pathMap) {
-        this.pathMap = pathMap;
-        this.resourcePath = resourcePath;
+        this.filePath = filePath;
     }
 
     public Map<String, String> getPathMap() {
@@ -67,28 +51,21 @@ public class FileHandler implements RouteHandler {
     }
 
     @Override
-    public void handle(Request request, Response response) throws IOException {
+    public boolean handle(Request request, Response response) throws IOException {
         var path = request.getURI().toString();
         path = pathMap.getOrDefault(path, path);
         if (path.equals("/")) {
-            response.send(HttpConst.STATUS_NOT_FOUND);
-            return;
+            return false;
         }
         // get requested URI as a file or as a resource if the file is not
         // found
-        var f = new File(resourcePath, path);
-        var in = f.exists()
-                ? new FileInputStream(f)
-                : getClass().getResourceAsStream(path);
-        if (in == null) {
-            response.send(HttpConst.STATUS_NOT_FOUND);
-            return;
-        }
-        try {
-            in.transferTo(response.getBody());
+        var f = new File(filePath, path);
+        try (var in = new FileInputStream(f)) {
+            in.transferTo(response.getStream());
             response.send(HttpConst.STATUS_OK);
-        } finally {
-            in.close();
+            return true;
+        } catch (Exception e) {
+            return false;
         }
     }
 }

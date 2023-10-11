@@ -9,20 +9,22 @@ import static java.net.HttpURLConnection.*;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 public class Router implements HttpHandler {
- 
+
     static class Route {
+
         public RouteHandler handler;
-        public boolean secure;        
+        public boolean secure;
         public char c;
-        public ConcurrentSkipListMap<Character, Route> next;   
+        public ConcurrentSkipListMap<Character, Route> next;
     }
 
     private final Route routes = new Route();
 
     /**
      * Add a public route that does not require authentication
+     *
      * @param route
-     * @param handler 
+     * @param handler
      */
     public void addPublicRoute(String route, RouteHandler handler) {
         if (!route.equals("*") && !route.startsWith("/")) {
@@ -33,8 +35,9 @@ public class Router implements HttpHandler {
 
     /**
      * Add a security route that requires authentication with a JWT token;
+     *
      * @param route
-     * @param handler 
+     * @param handler
      */
     public void addSecureRoute(String route, RouteHandler handler) {
         if (!route.equals("*") && !route.startsWith("/")) {
@@ -42,6 +45,7 @@ public class Router implements HttpHandler {
         }
         buildRoute(route, handler, true);
     }
+
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         try {
@@ -56,17 +60,21 @@ public class Router implements HttpHandler {
             // find route or 404
             var route = getRoute(request);
             if (route == null) {
-                response.send(HTTP_NOT_FOUND, "Not found");
+                response.sendText(HTTP_NOT_FOUND, "Not found");
                 return;
             }
 
             // check authorisation or 401
             if (route.secure && !isAuthorized(request)) {
-                response.send(HTTP_UNAUTHORIZED, "Unauthorized");
+                response.sendText(HTTP_UNAUTHORIZED, "Unauthorized");
                 return;
             }
 
-            route.handler.handle(request, response);
+            var handled = route.handler.handle(request, response);
+            if (!handled) {
+                response.send(HttpConst.STATUS_NOT_FOUND);
+            }
+
         } finally {
             // consume any residual request data, flush response data and close
             // exchange
@@ -79,6 +87,7 @@ public class Router implements HttpHandler {
 
     /**
      * Remove route
+     *
      * @param route
      */
     public void removeRoute(String route) {
@@ -88,6 +97,7 @@ public class Router implements HttpHandler {
             node.secure = false;
         }
     }
+
     Route findRoute(String uri) {
         Route wildcardNode = null;
         Route n = routes;
@@ -107,7 +117,6 @@ public class Router implements HttpHandler {
         // if handler == null we have a partial uri match only
         return (n != null && n.handler != null) ? n : wildcardNode;
     }
- 
 
     /**
      * CORS preflight requests will be sent by browsers because of the required
@@ -140,10 +149,11 @@ public class Router implements HttpHandler {
                 + HttpConst.X_FORWARDED_PROTO);
         exchange.sendResponseHeaders(HttpConst.STATUS_OK, 0);
     }
+
     /**
      * Validate the Authorization header It is assumed that the header contains
      * a JWT.
-     * 
+     *
      * @param request
      * @return true if the client is authorized for this request
      *
@@ -151,8 +161,10 @@ public class Router implements HttpHandler {
     protected boolean isAuthorized(Request request) {
         return false;
     }
+
     /**
      * Build route tree
+     *
      * @param path
      * @param handler
      * @param secure
@@ -170,6 +182,7 @@ public class Router implements HttpHandler {
         route.handler = handler;
         route.secure = secure;
     }
+
     /**
      * Get RouteData from request.
      *
@@ -178,7 +191,7 @@ public class Router implements HttpHandler {
      */
     private Route getRoute(Request request) {
         var uri = request.getURI().toString();
-        return findRoute(uri);       
+        return findRoute(uri);
     }
 
 }

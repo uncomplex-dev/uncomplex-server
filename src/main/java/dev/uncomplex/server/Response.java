@@ -2,6 +2,7 @@ package dev.uncomplex.server;
 
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
+import dev.uncomplex.json.JsonValue;
 import dev.uncomplex.utf8.Utf8Writer;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -16,10 +17,10 @@ import java.io.OutputStream;
  * the body was constructed correctly before we can send the appropriate status
  * code.
  *
- * Response allows the construction of the HTTP body BEFORE sending the
- * status and headers by caching the body in an in-memory byte array. When
- * send() is called the status and header are writing to the underlying output
- * stream followed by the cached body.
+ * Response allows the construction of the HTTP body BEFORE sending the status
+ * and headers by caching the body in an in-memory byte array. When send() is
+ * called the status and header are writing to the underlying output stream
+ * followed by the cached body.
  *
  * @author jthorpe
  */
@@ -31,8 +32,7 @@ public class Response {
     public Response(HttpExchange exchange) {
         this.exchange = exchange;
     }
-    
-    
+
     /**
      * Clear buffer
      */
@@ -42,7 +42,8 @@ public class Response {
 
     /**
      * Get response headers
-     * @return 
+     *
+     * @return
      */
     public Headers getHeaders() {
         return exchange.getResponseHeaders();
@@ -56,7 +57,7 @@ public class Response {
      *
      * @return
      */
-    public OutputStream getBody() {
+    public OutputStream getStream() {
         return stream;
     }
 
@@ -75,17 +76,42 @@ public class Response {
     }
 
     /**
-     * Send the response, with the response body being the UTF8 encoded message.
+     * Send the response, with the response body being the UTF8 encoded content.
      * Any bytes previously written to the response stream will be discarded
      *
      * @param status
-     * @param message
+     * @param content
+     * @param mimeType
      * @throws IOException
      */
-    public void send(int status, String message) throws IOException {
+    public void send(int status, String content, String mimeType) throws IOException {
         stream.reset();
-        new Utf8Writer(stream).write(message);
+        new Utf8Writer(stream).write(content);
+        getHeaders().set(HttpConst.CONTENT_TYPE, mimeType);
         send(status);
+    }
+
+    public void sendHtml(int status, String content) throws IOException {
+        send(status, content, HttpConst.CONTENT_TYPE_HTML);
+    }    
+    
+    
+    public void sendJson(int status, String content) throws IOException {
+        send(status, content, HttpConst.CONTENT_TYPE_JSON);
+    }    
+    
+    public void sendJson(int status, JsonValue json) throws IOException {
+        send(status, json.toJsonString(), HttpConst.CONTENT_TYPE_JSON);
+    }    
+
+    
+    public void sendXml(int status, String content) throws IOException {
+        send(status, content, HttpConst.CONTENT_TYPE_XML);
+    }    
+
+    
+    public void sendText(int status, String content) throws IOException {
+        send(status, content, HttpConst.CONTENT_TYPE_PLAIN);
     }
 
 }
