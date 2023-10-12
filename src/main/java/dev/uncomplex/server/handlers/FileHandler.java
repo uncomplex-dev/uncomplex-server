@@ -10,6 +10,7 @@ import dev.uncomplex.server.HttpConst;
 import dev.uncomplex.server.Request;
 import dev.uncomplex.server.Response;
 import dev.uncomplex.server.RouteHandler;
+import java.net.URLConnection;
 
 /**
  * Copy the file corresponding to the URL to response stream.
@@ -61,6 +62,8 @@ public class FileHandler implements RouteHandler {
         // found
         var f = new File(filePath, path);
         try (var in = new FileInputStream(f)) {
+            String mimetype = URLConnection.getFileNameMap().getContentTypeFor(f.getName());
+            response.getHeaders().set(HttpConst.CONTENT_TYPE, mimetype);
             in.transferTo(response.getStream());
             response.send(HttpConst.STATUS_OK);
             return true;
