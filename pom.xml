@@ -21,6 +21,14 @@
             <url>https://maven.pkg.github.com/uncomplex-dev/packages</url>
         </repository>
     </repositories>
+    
+    <distributionManagement>
+        <repository>
+            <id>uncomplex-dev</id>
+            <name>GitHub uncomplex.dev Package Repository</name>
+            <url>https://maven.pkg.github.com/uncomplex-dev/packages</url>
+        </repository>
+    </distributionManagement>
 
     <dependencies>
 
