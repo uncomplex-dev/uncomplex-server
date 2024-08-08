@@ -14,7 +14,7 @@ public class Main {
         // Create a server that listens on port 8180.
         var server = HttpServer.create(new InetSocketAddress(env.getInt("port", 0)), 0);
         var router = new Router();
-        router.addPublicRoute("*", new FileHandler(env.get("resources", "./resources")));
+        router.addRoute("*", new FileHandler(env.get("resources", "./resources")));
         server.createContext("/", router);
         server.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
         server.start();

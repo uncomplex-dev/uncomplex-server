@@ -13,7 +13,6 @@ public class Router implements HttpHandler {
     static class Route {
 
         public RouteHandler handler;
-        public boolean secure;
         public char c;
         public ConcurrentSkipListMap<Character, Route> next;
     }
@@ -26,25 +25,13 @@ public class Router implements HttpHandler {
      * @param route
      * @param handler
      */
-    public void addPublicRoute(String route, RouteHandler handler) {
+    public void addRoute(String route, RouteHandler handler) {
         if (!route.equals("*") && !route.startsWith("/")) {
             route = "/" + route;
         }
-        buildRoute(route, handler, false);
+        buildRoute(route, handler);
     }
 
-    /**
-     * Add a security route that requires authentication with a JWT token;
-     *
-     * @param route
-     * @param handler
-     */
-    public void addSecureRoute(String route, RouteHandler handler) {
-        if (!route.equals("*") && !route.startsWith("/")) {
-            route = "/" + route;
-        }
-        buildRoute(route, handler, true);
-    }
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
@@ -61,12 +48,6 @@ public class Router implements HttpHandler {
             var route = getRoute(request);
             if (route == null) {
                 response.sendText(HTTP_NOT_FOUND, "Not found");
-                return;
-            }
-
-            // check authorisation or 401
-            if (route.secure && !isAuthorized(request)) {
-                response.sendText(HTTP_UNAUTHORIZED, "Unauthorized");
                 return;
             }
 
@@ -94,7 +75,6 @@ public class Router implements HttpHandler {
         var node = findRoute(route);
         if (node != null) {
             node.handler = null;  // <== findRoute() now returns null
-            node.secure = false;
         }
     }
 
@@ -167,9 +147,8 @@ public class Router implements HttpHandler {
      *
      * @param path
      * @param handler
-     * @param secure
      */
-    private void buildRoute(String path, RouteHandler handler, boolean secure) {
+    private void buildRoute(String path, RouteHandler handler) {
         Route route = routes;
         for (int i = 0; i < path.length(); ++i) {
             if (route.next == null) {
@@ -180,7 +159,6 @@ public class Router implements HttpHandler {
             route.c = c;
         }
         route.handler = handler;
-        route.secure = secure;
     }
 
     /**

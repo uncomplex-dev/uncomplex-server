@@ -12,7 +12,7 @@ import dev.uncomplex.server.RouteHandler;
 /**
  * Copy the file corresponding to the URL to response stream.
  *
- * The Resource will look for the file as as resource within the packaged .jar
+ * The Resource will look for the file as a resource within the packaged .jar
  * file
  *
  *
