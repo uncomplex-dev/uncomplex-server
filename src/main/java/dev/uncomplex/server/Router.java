@@ -39,9 +39,10 @@ public class Router implements HttpHandler {
             var request = new Request(exchange);
             var response = new Response(exchange);
             // handle cors preflight request
+            handlePrefightRequest(exchange);
+
             if (request.getRequestMethod().equals(HttpConst.METHOD_OPTIONS)) {
-                handlePrefightRequest(exchange);
-                return;
+                response.send(HttpConst.STATUS_OK);
             }
 
             // find route or 404
@@ -127,7 +128,6 @@ public class Router implements HttpHandler {
                 + HttpConst.X_FORWARDED_FOR + ","
                 + HttpConst.X_FORWARDED_PORT + ","
                 + HttpConst.X_FORWARDED_PROTO);
-        exchange.sendResponseHeaders(HttpConst.STATUS_OK, 0);
     }
 
     /**
