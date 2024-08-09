@@ -64,10 +64,5 @@ public class Request {
     public void setAttribute(String name, Object value) {
         exchange.setAttribute(name, value);
     }
-    
-    @Override
-    public String toString() {
-        return Utf8Reader.toString(getBody());
-    }
 
 }
