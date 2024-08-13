@@ -5,7 +5,7 @@
 
     <groupId>dev.uncomplex</groupId>
     <artifactId>uncomplex-server</artifactId>
-    <version>1.0.4</version>
+    <version>1.0.5</version>
 
     <properties> 
         <maven.compiler.release>21</maven.compiler.release>
@@ -36,19 +36,7 @@
             <artifactId>uncomplex-json</artifactId>
             <version>1.0.3</version>
         </dependency>          
-        
-        <dependency>
-            <groupId>dev.uncomplex</groupId>
-            <artifactId>uncomplex-jwt</artifactId>
-            <version>1.0.0</version>
-        </dependency>
 
-        <dependency>
-            <groupId>dev.uncomplex</groupId>
-            <artifactId>uncomplex-env</artifactId>
-            <version>1.0.1</version>
-        </dependency>        
-                        
         <!-- testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
