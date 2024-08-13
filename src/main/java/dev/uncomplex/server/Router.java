@@ -41,19 +41,19 @@ public class Router implements HttpHandler {
             // handle cors preflight request
             handlePrefightRequest(exchange);
 
-            if (request.getRequestMethod().equals(HttpConst.METHOD_OPTIONS)) {
-                response.send(HttpConst.STATUS_OK);
-            }
-
             // find route or 404
+            DebugLog.log("Finding handler for route: %s", request.getURI().toString());
             var route = getRoute(request);
             if (route == null) {
+                DebugLog.log("Unable to find handler: return 404");
                 response.sendText(HTTP_NOT_FOUND, "Not found");
                 return;
             }
 
+            DebugLog.log("Handler found");
             var handled = route.handler.handle(request, response);
             if (!handled) {
+                DebugLog.log("Handler unable to deal with request: return 404");
                 response.send(HttpConst.STATUS_NOT_FOUND);
             }
 

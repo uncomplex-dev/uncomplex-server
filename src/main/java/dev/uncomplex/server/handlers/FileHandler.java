@@ -6,10 +6,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import dev.uncomplex.server.HttpConst;
-import dev.uncomplex.server.Request;
-import dev.uncomplex.server.Response;
-import dev.uncomplex.server.RouteHandler;
+import dev.uncomplex.server.*;
+
 import java.net.URLConnection;
 
 /**
@@ -54,13 +52,21 @@ public class FileHandler implements RouteHandler {
     @Override
     public boolean handle(Request request, Response response) throws IOException {
         var path = request.getURI().toString();
+        DebugLog.log("FileHandler - Handling file request: %s", path);
         path = pathMap.getOrDefault(path, path);
         if (path.equals("/")) {
-            return false;
+            DebugLog.log("FileHandler - Invalid file specified");
+            response.send(HttpConst.STATUS_NOT_FOUND);
+            return true;
         }
         // get requested URI as a file or as a resource if the file is not
         // found
         var f = new File(filePath, path);
+        if (!f.exists()) {
+            DebugLog.log("FileHandler - File not found: %s", f.getCanonicalPath());
+            response.send(HttpConst.STATUS_NOT_FOUND);
+            return true;
+        }
         try (var in = new FileInputStream(f)) {
             String mimetype = URLConnection.getFileNameMap().getContentTypeFor(f.getName());
             response.getHeaders().set(HttpConst.CONTENT_TYPE, mimetype);
@@ -68,6 +74,7 @@ public class FileHandler implements RouteHandler {
             response.send(HttpConst.STATUS_OK);
             return true;
         } catch (Exception e) {
+            DebugLog.log(e);
             return false;
         }
     }

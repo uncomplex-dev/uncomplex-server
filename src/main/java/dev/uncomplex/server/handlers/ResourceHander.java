@@ -4,10 +4,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import dev.uncomplex.server.HttpConst;
-import dev.uncomplex.server.Request;
-import dev.uncomplex.server.Response;
-import dev.uncomplex.server.RouteHandler;
+import dev.uncomplex.server.*;
 
 /**
  * Copy the file corresponding to the URL to response stream.
@@ -52,19 +49,29 @@ public class ResourceHander implements RouteHandler {
     @Override
     public boolean handle(Request request, Response response) throws IOException {
         var path = request.getURI().toString();
+        DebugLog.log("ResourceHandler - Handling resource request: %s", path);
         path = pathMap.getOrDefault(path, path);
         if (path.equals("/")) {
-            return false;
+            DebugLog.log("ResourceHandler - Invalid resource specified");
+            response.send(HttpConst.STATUS_NOT_FOUND);
+            return true;
         }
+
         var resPath = String.join("/", resourcePath, path);
         var in = getClass().getResourceAsStream(resPath);
-        if (in != null) {
-            try (in) {
-                in.transferTo(response.getStream());
-                response.send(HttpConst.STATUS_OK);
-                return true;
-            }
+        if (in == null) {
+            DebugLog.log("ResourceHandler - Resource not found: %s", resPath);
+            response.send(HttpConst.STATUS_NOT_FOUND);
+            return true;
         }
-        return false;
+
+        try (in) {
+            in.transferTo(response.getStream());
+            response.send(HttpConst.STATUS_OK);
+            return true;
+        } catch (IOException e) {
+            DebugLog.log(e);
+            return false;
+        }
     }
 }
