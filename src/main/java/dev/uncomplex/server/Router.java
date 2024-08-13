@@ -26,6 +26,7 @@ public class Router implements HttpHandler {
      * @param handler
      */
     public void addRoute(String route, RouteHandler handler) {
+        DebugLog.log("Router - Adding route: %s", route);
         if (!route.equals("*") && !route.startsWith("/")) {
             route = "/" + route;
         }
@@ -110,7 +111,7 @@ public class Router implements HttpHandler {
      */
     protected void handlePrefightRequest(HttpExchange exchange) throws IOException {
         var headers = exchange.getResponseHeaders();
-        headers.add(HttpConst.ACCESS_CONTROL_ALLOW_ORIGIN, exchange.getRequestHeaders().getFirst(HttpConst.ORIGIN));
+        headers.add(HttpConst.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
         headers.add(HttpConst.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
         headers.add(HttpConst.ACCESS_CONTROL_ALLOW_METHODS,
                 HttpConst.METHOD_GET + ","
@@ -128,18 +129,6 @@ public class Router implements HttpHandler {
                 + HttpConst.X_FORWARDED_FOR + ","
                 + HttpConst.X_FORWARDED_PORT + ","
                 + HttpConst.X_FORWARDED_PROTO);
-    }
-
-    /**
-     * Validate the Authorization header It is assumed that the header contains
-     * a JWT.
-     *
-     * @param request
-     * @return true if the client is authorized for this request
-     *
-     */
-    protected boolean isAuthorized(Request request) {
-        return false;
     }
 
     /**
