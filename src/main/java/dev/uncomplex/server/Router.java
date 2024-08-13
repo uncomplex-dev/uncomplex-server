@@ -41,6 +41,10 @@ public class Router implements HttpHandler {
             var response = new Response(exchange);
             // handle cors preflight request
             handlePrefightRequest(exchange);
+            if (request.getRequestMethod().equals("OPTIONS")) {
+                response.send(HttpConst.STATUS_OK);
+                return;
+            }
 
             // find route or 404
             DebugLog.log("Finding handler for route: %s", request.getURI().toString());
@@ -110,25 +114,32 @@ public class Router implements HttpHandler {
      * @throws java.io.IOException
      */
     protected void handlePrefightRequest(HttpExchange exchange) throws IOException {
-        var headers = exchange.getResponseHeaders();
-        headers.add(HttpConst.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
-        headers.add(HttpConst.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
-        headers.add(HttpConst.ACCESS_CONTROL_ALLOW_METHODS,
-                HttpConst.METHOD_GET + ","
-                + HttpConst.METHOD_OPTIONS + ","
-                + HttpConst.METHOD_POST + ",");
+        // if origin is specified we have browser calling directly so return a CORS header
+        // otherwise this is a system API call which we can ignore
+        var origin = exchange.getRequestHeaders().getFirst(HttpConst.ORIGIN);
+        if (origin != null) {
+            var headers = exchange.getResponseHeaders();
+            headers.add(HttpConst.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+            headers.add(HttpConst.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
+            if (exchange.getRequestMethod().equals("OPTIONS")) {
+                headers.add(HttpConst.ACCESS_CONTROL_ALLOW_METHODS,
+                        HttpConst.METHOD_GET + ","
+                                + HttpConst.METHOD_OPTIONS + ","
+                                + HttpConst.METHOD_POST + ",");
 
-        headers.add(HttpConst.ACCESS_CONTROL_ALLOW_HEADERS,
-                HttpConst.ORIGIN + ","
-                + HttpConst.ACCEPT + ","
-                + HttpConst.ACCEPT_LANGUAGE + ","
-                + HttpConst.CONTENT_LANGUAGE + ","
-                + HttpConst.CONTENT_TYPE + ","
-                + HttpConst.AUTHORIZATION + ","
-                + HttpConst.X_FORWARDED_HOST + ","
-                + HttpConst.X_FORWARDED_FOR + ","
-                + HttpConst.X_FORWARDED_PORT + ","
-                + HttpConst.X_FORWARDED_PROTO);
+                headers.add(HttpConst.ACCESS_CONTROL_ALLOW_HEADERS,
+                        HttpConst.ORIGIN + ","
+                                + HttpConst.ACCEPT + ","
+                                + HttpConst.ACCEPT_LANGUAGE + ","
+                                + HttpConst.CONTENT_LANGUAGE + ","
+                                + HttpConst.CONTENT_TYPE + ","
+                                + HttpConst.AUTHORIZATION + ","
+                                + HttpConst.X_FORWARDED_HOST + ","
+                                + HttpConst.X_FORWARDED_FOR + ","
+                                + HttpConst.X_FORWARDED_PORT + ","
+                                + HttpConst.X_FORWARDED_PROTO);
+            }
+        }
     }
 
     /**
